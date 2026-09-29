@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  insight-engine:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: github-insight-engine
+    ports:
+      - "8000:8000"
+    volumes:
+      # Mount backend for local database persistence and code sync
+      - ./backend:/app
+      # Mount frontend to /frontend because main.py resolves it via Path(__file__).parent.parent / "frontend"
+      - ./frontend:/frontend
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=sqlite+aiosqlite:////app/github_insight.db
+      - CORS_ORIGINS=http://localhost:8000,http://127.0.0.1:8000,http://localhost:3000
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped

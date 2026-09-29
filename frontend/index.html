@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitInsight — AI-Powered GitHub Repository Analytics</title>
+
+  <!-- SEO -->
+  <meta name="description" content="Analyze any GitHub repository with AI-powered insights, architecture review, code quality scoring and learning recommendations.">
+  <meta name="author" content="GitInsight">
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/app.css?v=20260807-4">
+
+  <!-- Icon CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Export PDF libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="dark-mode">
+
+  <div id="app">
+
+    <!-- ─── SIDEBAR NAVIGATION (180px) ───────────────────────── -->
+    <aside class="sidebar" aria-label="Main navigation">
+      
+      <!-- Brand Logo Header -->
+      <div class="sidebar-header">
+        <a class="brand-logo" id="brandLogoBtn" role="button" tabindex="0">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+          </svg>
+          <span>GitInsight</span>
+        </a>
+      </div>
+
+      <!-- Navigation Links (2 Groups with 1px Dividers) -->
+      <nav class="sidebar-menu">
+        <!-- Group 1 -->
+        <a class="menu-link active" id="navHome" role="button" tabindex="0">
+          <i data-lucide="home"></i>
+          <span>Home</span>
+        </a>
+        <a class="menu-link" id="navDiscover" role="button" tabindex="0">
+          <i data-lucide="compass"></i>
+          <span>Discover</span>
+        </a>
+        <a class="menu-link" id="navCompare" role="button" tabindex="0">
+          <i data-lucide="git-compare"></i>
+          <span>Compare</span>
+        </a>
+
+        <!-- 1px Divider -->
+        <div class="sidebar-divider"></div>
+
+        <!-- Group 2 -->
+        <a class="menu-link" id="navSaved" role="button" tabindex="0">
+          <i data-lucide="bookmark"></i>
+          <span>Saved</span>
+        </a>
+        <a class="menu-link" id="navReports" role="button" tabindex="0">
+          <i data-lucide="file-text"></i>
+          <span>Reports</span>
+        </a>
+        <a class="menu-link" id="historyBtn" role="button" tabindex="0">
+          <i data-lucide="clock"></i>
+          <span>Search History</span>
+        </a>
+      </nav>
+
+      <!-- Sidebar Footer (Settings, User Account, Theme) -->
+      <div class="sidebar-footer">
+        <a class="menu-link" id="settingsBtn" role="button" tabindex="0" style="padding:4px 0;">
+          <i data-lucide="settings"></i>
+          <span>Settings</span>
+        </a>
+
+        <div id="userProfileWidget"></div>
+
+        <button class="menu-link" id="themeToggle" style="padding:4px 0;font-size:11px;">
+          <i data-lucide="sun"></i>
+          <span>Light Mode</span>
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- ─── MAIN CONTENT WORKSPACE ────────────────────────── -->
+    <div class="main-content">
+      
+      <!-- Top Action Bar -->
+      <header class="top-bar">
+        <div class="top-breadcrumb" id="topBreadcrumb">
+          GitInsight / Workspace
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn btn-ghost" id="topSettingsBtn" title="Settings">
+            <i data-lucide="sliders"></i>
+          </button>
+          <button class="btn btn-ghost" id="topThemeToggle" title="Toggle Theme">
+            <i data-lucide="moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Workspace Scroll Area -->
+      <main id="mainContent" class="view-container">
+        <!-- ui.js renders views here -->
+      </main>
+
+    </div>
+  </div>
+
+  <!-- ─── SETTINGS MODAL ───────────────────────────────────── -->
+  <div id="settingsModal" class="modal-overlay" hidden aria-modal="true" role="dialog">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span>Settings</span>
+        <button class="btn-ghost" id="closeSettings" style="padding:2px"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">GitHub Personal Access Token</label>
+          <input type="password" id="githubTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="search-input-field">
+          <span style="font-size:11px;color:var(--text-muted);">Increase rate limits from 60 to 5,000 requests/hr.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">Google Gemini API Key</label>
+          <input type="password" id="geminiKeyInput" placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxx" class="search-input-field">
+          <span style="font-size:11px;color:var(--text-muted);">Required for AI architecture reviews & roadmaps.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">FastAPI Backend URL</label>
+          <input type="text" id="backendUrlInput" value="http://localhost:8000" class="search-input-field">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelSettings">Cancel</button>
+        <button class="btn btn-primary" id="saveSettings">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── AUTH MODAL ───────────────────────────────────────── -->
+  <div id="authModal" class="modal-overlay" hidden aria-modal="true" role="dialog">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span id="authTitleText">Sign In to GitInsight</span>
+        <button class="btn-ghost" id="closeAuth" style="padding:2px"><i data-lucide="x"></i></button>
+      </div>
+      <div class="modal-body" id="loginFormContainer">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">Username</label>
+          <input type="text" id="loginUsername" placeholder="Enter username" class="search-input-field">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter password" class="search-input-field">
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center;">
+          Don't have an account? <a href="#" id="switchToRegister">Register here</a>
+        </p>
+      </div>
+      <div class="modal-body" id="registerFormContainer" style="display:none;">
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">Username</label>
+          <input type="text" id="registerUsername" placeholder="Choose a username" class="search-input-field">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <label style="font-size:12px;font-weight:500;">Password</label>
+          <input type="password" id="registerPassword" placeholder="Create a password" class="search-input-field">
+        </div>
+        <p style="font-size:11px;color:var(--text-muted);text-align:center;">
+          Already have an account? <a href="#" id="switchToLogin">Sign in here</a>
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" id="cancelAuth">Cancel</button>
+        <button class="btn btn-primary" id="submitAuthBtn">
+          <i data-lucide="log-in" id="authSubmitIcon"></i>
+          <span id="authSubmitText">Sign In</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="notification-container"></div>
+
+  <!-- Main ES Module Entry Point -->
+  <script type="module" src="/js/main.js"></script>
+
+  <script>
+    document.getElementById('brandLogoBtn')?.addEventListener('click', () => {
+      document.getElementById('navHome')?.click();
+    });
+
+    document.getElementById('topSettingsBtn')?.addEventListener('click', () => {
+      document.getElementById('settingsBtn')?.click();
+    });
+
+    document.getElementById('topThemeToggle')?.addEventListener('click', () => {
+      document.getElementById('themeToggle')?.click();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
